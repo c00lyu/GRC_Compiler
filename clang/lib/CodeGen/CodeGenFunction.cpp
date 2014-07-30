@@ -819,7 +819,7 @@ bool CodeGenFunction::containsBreak(const Stmt *S) {
   // If this is a switch or loop that defines its own break scope, then we can
   // include it and anything inside of it.
   if (isa<SwitchStmt>(S) || isa<WhileStmt>(S) || isa<DoStmt>(S) ||
-      isa<ForStmt>(S))
+      isa<ForStmt>(S) || isa<GRForStmt>(S))
     return false;
 
   if (isa<BreakStmt>(S))
