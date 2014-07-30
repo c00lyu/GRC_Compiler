@@ -2915,6 +2915,13 @@ public:
                           FullExprArg Third,
                           SourceLocation RParenLoc,
                           Stmt *Body);
+  StmtResult ActOnGRForStmt(SourceLocation ForLoc,
+                          SourceLocation LParenLoc,
+                          Stmt *First, FullExprArg Second,
+                          Decl *SecondVar,
+                          FullExprArg Third,
+                          SourceLocation RParenLoc,
+                          Stmt *Body);
   ExprResult CheckObjCForCollectionOperand(SourceLocation forLoc,
                                            Expr *collection);
   StmtResult ActOnObjCForCollectionStmt(SourceLocation ForColLoc,

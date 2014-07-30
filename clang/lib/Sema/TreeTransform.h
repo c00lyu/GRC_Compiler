@@ -1162,6 +1162,13 @@ public:
     return getSema().ActOnForStmt(ForLoc, LParenLoc, Init, Cond,
                                   CondVar, Inc, RParenLoc, Body);
   }
+  StmtResult RebuildGRForStmt(SourceLocation ForLoc, SourceLocation LParenLoc,
+                            Stmt *Init, Sema::FullExprArg Cond,
+                            VarDecl *CondVar, Sema::FullExprArg Inc,
+                            SourceLocation RParenLoc, Stmt *Body) {
+    return getSema().ActOnGRForStmt(ForLoc, LParenLoc, Init, Cond,
+                                  CondVar, Inc, RParenLoc, Body);
+  }
 
   /// \brief Build a new goto statement.
   ///
@@ -5633,6 +5640,72 @@ TreeTransform<Derived>::TransformForStmt(ForStmt *S) {
     return SemaRef.Owned(S);
 
   return getDerived().RebuildForStmt(S->getForLoc(), S->getLParenLoc(),
+                                     Init.get(), FullCond, ConditionVar,
+                                     FullInc, S->getRParenLoc(), Body.get());
+}
+
+template<typename Derived>
+StmtResult
+TreeTransform<Derived>::TransformGRForStmt(GRForStmt *S) {
+  // Transform the initialization statement
+  StmtResult Init = getDerived().TransformStmt(S->getInit());
+  if (Init.isInvalid())
+    return StmtError();
+
+  // Transform the condition
+  ExprResult Cond;
+  VarDecl *ConditionVar = 0;
+  if (S->getConditionVariable()) {
+    ConditionVar
+      = cast_or_null<VarDecl>(
+                   getDerived().TransformDefinition(
+                                      S->getConditionVariable()->getLocation(),
+                                                    S->getConditionVariable()));
+    if (!ConditionVar)
+      return StmtError();
+  } else {
+    Cond = getDerived().TransformExpr(S->getCond());
+
+    if (Cond.isInvalid())
+      return StmtError();
+
+    if (S->getCond()) {
+      // Convert the condition to a boolean value.
+      ExprResult CondE = getSema().ActOnBooleanCondition(0, S->getForLoc(),
+                                                         Cond.get());
+      if (CondE.isInvalid())
+        return StmtError();
+
+      Cond = CondE.get();
+    }
+  }
+
+  Sema::FullExprArg FullCond(getSema().MakeFullExpr(Cond.take()));
+  if (!S->getConditionVariable() && S->getCond() && !FullCond.get())
+    return StmtError();
+
+  // Transform the increment
+  ExprResult Inc = getDerived().TransformExpr(S->getInc());
+  if (Inc.isInvalid())
+    return StmtError();
+
+  Sema::FullExprArg FullInc(getSema().MakeFullDiscardedValueExpr(Inc.get()));
+  if (S->getInc() && !FullInc.get())
+    return StmtError();
+
+  // Transform the body
+  StmtResult Body = getDerived().TransformStmt(S->getBody());
+  if (Body.isInvalid())
+    return StmtError();
+
+  if (!getDerived().AlwaysRebuild() &&
+      Init.get() == S->getInit() &&
+      FullCond.get() == S->getCond() &&
+      Inc.get() == S->getInc() &&
+      Body.get() == S->getBody())
+    return SemaRef.Owned(S);
+
+  return getDerived().RebuildGRForStmt(S->getForLoc(), S->getLParenLoc(),
                                      Init.get(), FullCond, ConditionVar,
                                      FullInc, S->getRParenLoc(), Body.get());
 }
