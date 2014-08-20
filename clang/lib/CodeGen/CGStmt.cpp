@@ -130,6 +130,7 @@ void CodeGenFunction::EmitStmt(const Stmt *S) {
   case Stmt::WhileStmtClass:    EmitWhileStmt(cast<WhileStmt>(*S));       break;
   case Stmt::DoStmtClass:       EmitDoStmt(cast<DoStmt>(*S));             break;
   case Stmt::ForStmtClass:      EmitForStmt(cast<ForStmt>(*S));           break;
+  case Stmt::GRForStmtClass:    EmitGRForStmt(cast<ForStmt>(*S));       break;
 
   case Stmt::ReturnStmtClass:   EmitReturnStmt(cast<ReturnStmt>(*S));     break;
 
@@ -676,6 +677,97 @@ void CodeGenFunction::EmitForStmt(const ForStmt &S) {
   // condition), and that we will become our continue block.
   if (S.getInc())
     Continue = getJumpDestInCurrentScope("for.inc");
+
+  // Store the blocks to use for break and continue.
+  BreakContinueStack.push_back(BreakContinue(LoopExit, Continue));
+
+  {
+    // Create a separate cleanup scope for the body, in case it is not
+    // a compound statement.
+    RunCleanupsScope BodyScope(*this);
+    EmitStmt(S.getBody());
+  }
+
+  // If there is an increment, emit it next.
+  if (S.getInc()) {
+    EmitBlock(Continue.getBlock());
+    EmitStmt(S.getInc());
+  }
+
+  BreakContinueStack.pop_back();
+
+  ConditionScope.ForceCleanup();
+  EmitBranch(CondBlock);
+
+  ForScope.ForceCleanup();
+
+  if (DI)
+    DI->EmitLexicalBlockEnd(Builder, S.getSourceRange().getEnd());
+
+  // Emit the fall-through block.
+  EmitBlock(LoopExit.getBlock(), true);
+}
+
+void CodeGenFunction::EmitGRForStmt(const ForStmt &S) {
+  JumpDest LoopExit = getJumpDestInCurrentScope("__gr_for.end");
+
+  RunCleanupsScope ForScope(*this);
+
+  CGDebugInfo *DI = getDebugInfo();
+  if (DI)
+    DI->EmitLexicalBlockStart(Builder, S.getSourceRange().getBegin());
+
+  // Evaluate the first part before the loop.
+  if (S.getInit())
+    EmitStmt(S.getInit());
+
+  // Start the loop with a block that tests the condition.
+  // If there's an increment, the continue scope will be overwritten
+  // later.
+  JumpDest Continue = getJumpDestInCurrentScope("__gr_for.cond");
+  llvm::BasicBlock *CondBlock = Continue.getBlock();
+  EmitBlock(CondBlock);
+
+  // Create a cleanup scope for the condition variable cleanups.
+  RunCleanupsScope ConditionScope(*this);
+
+  if (S.getCond()) {
+    // If the for statement has a condition scope, emit the local variable
+    // declaration.
+    if (S.getConditionVariable()) {
+      EmitAutoVarDecl(*S.getConditionVariable());
+    }
+
+    llvm::BasicBlock *ExitBlock = LoopExit.getBlock();
+    // If there are any cleanups between here and the loop-exit scope,
+    // create a block to stage a loop exit along.
+    if (ForScope.requiresCleanups())
+      ExitBlock = createBasicBlock("__gr_for.cond.cleanup");
+
+    // As long as the condition is true, iterate the loop.
+    llvm::BasicBlock *ForBody = createBasicBlock("__gr_for.body");
+
+    // C99 6.8.5p2/p4: The first substatement is executed if the expression
+    // compares unequal to 0.  The condition must be a scalar type.
+    EmitBranchOnBoolExpr(S.getCond(), ForBody, ExitBlock);
+
+    if (ExitBlock != LoopExit.getBlock()) {
+      EmitBlock(ExitBlock);
+      EmitBranchThroughCleanup(LoopExit);
+    }
+
+    EmitBlock(ForBody);
+  } else {
+    // Treat it as a non-zero constant.  Don't even create a new block for the
+    // body, just fall into it.
+  }
+
+  // If the for loop doesn't have an increment we can just use the
+  // condition as the continue block.  Otherwise we'll need to create
+  // a block for it (in the current scope, i.e. in the scope of the
+  // condition), and that we will become our continue block.
+  if (S.getInc())
+    Continue = getJumpDestInCurrentScope("__gr_for.inc");
 
   // Store the blocks to use for break and continue.
   BreakContinueStack.push_back(BreakContinue(LoopExit, Continue));

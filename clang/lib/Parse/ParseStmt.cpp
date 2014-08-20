@@ -1410,6 +1410,9 @@ StmtResult Parser::ParseDoStatement() {
 /// [C++0x]   expression
 /// [C++0x]   braced-init-list            [TODO]
 StmtResult Parser::ParseForStatement(SourceLocation *TrailingElseLoc) {
+
+  bool isGRFor = Tok.is(tok::kw___gr_for) ? true : false;
+
   assert((Tok.is(tok::kw_for) || Tok.is(tok::kw___gr_for)) && "Not a for stmt!");
   SourceLocation ForLoc = ConsumeToken();  // eat the 'for'.
 
@@ -1659,7 +1662,7 @@ StmtResult Parser::ParseForStatement(SourceLocation *TrailingElseLoc) {
 
   return Actions.ActOnForStmt(ForLoc, T.getOpenLocation(), FirstPart.take(),
                               SecondPart, SecondVar, ThirdPart,
-                              T.getCloseLocation(), Body.take());
+                              T.getCloseLocation(), Body.take(), isGRFor ? GRForStmtClass : ForStmtClass);
 }
 
 /// ParseGotoStatement

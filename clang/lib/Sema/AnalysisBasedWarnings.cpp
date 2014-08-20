@@ -594,6 +594,7 @@ static void DiagUninitUse(Sema &S, const VarDecl *VD, const UninitUse &Use,
       RemoveDiagKind = 1;
       Fixit1 = FixItHint::CreateReplacement(Range, FixitStr);
       break;
+    case Stmt::GRForStmtClass:
     case Stmt::ForStmtClass:
       DiagKind = 1;
       Str = "for";
@@ -1001,6 +1002,7 @@ static bool isInLoop(const ASTContext &Ctx, const ParentMap &PM,
 
   do {
     switch (S->getStmtClass()) {
+    case Stmt::GRForStmtClass:
     case Stmt::ForStmtClass:
     case Stmt::WhileStmtClass:
     case Stmt::CXXForRangeStmtClass:

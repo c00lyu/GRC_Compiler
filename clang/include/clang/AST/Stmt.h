@@ -1119,7 +1119,7 @@ class ForStmt : public Stmt {
 public:
   ForStmt(const ASTContext &C, Stmt *Init, Expr *Cond, VarDecl *condVar,
           Expr *Inc, Stmt *Body, SourceLocation FL, SourceLocation LP,
-          SourceLocation RP);
+          SourceLocation RP, StmtClass SC);
 
   /// \brief Build an empty for statement.
   explicit ForStmt(EmptyShell Empty) : Stmt(ForStmtClass, Empty) { }
@@ -1170,7 +1170,7 @@ public:
   }
 
   static bool classof(const Stmt *T) {
-    return T->getStmtClass() == ForStmtClass;
+    return (T->getStmtClass() == ForStmtClass) || (T->getStmtClass() == GRForStmtClass);
   }
 
   // Iterators

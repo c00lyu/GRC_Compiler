@@ -408,6 +408,7 @@ static const Stmt *getEnclosingParent(const Stmt *S, const ParentMap &PM) {
     return 0;
 
   switch (Parent->getStmtClass()) {
+  case Stmt::GRForStmtClass:
   case Stmt::ForStmtClass:
   case Stmt::DoStmtClass:
   case Stmt::WhileStmtClass:
@@ -460,6 +461,7 @@ getEnclosingStmtLocation(const Stmt *S, SourceManager &SMgr, const ParentMap &P,
         break;
       case Stmt::DoStmtClass:
           return PathDiagnosticLocation(S, SMgr, LC);
+      case Stmt::GRForStmtClass:
       case Stmt::ForStmtClass:
         if (cast<ForStmt>(Parent)->getBody() == S)
           return PathDiagnosticLocation(S, SMgr, LC);
@@ -822,6 +824,7 @@ static bool GenerateMinimalPathDiagnostic(PathDiagnostic& PD,
         }
 
         case Stmt::WhileStmtClass:
+        case Stmt::GRForStmtClass:
         case Stmt::ForStmtClass: {
           if (*(Src->succ_begin()+1) == Dst) {
             std::string sbuf;
@@ -1304,6 +1307,7 @@ static void reversePropagateInterestingSymbols(BugReport &R,
 
 static bool isLoop(const Stmt *Term) {
   switch (Term->getStmtClass()) {
+    case Stmt::GRForStmtClass:
     case Stmt::ForStmtClass:
     case Stmt::WhileStmtClass:
     case Stmt::ObjCForCollectionStmtClass:
@@ -1366,6 +1370,7 @@ static bool isInLoopBody(ParentMap &PM, const Stmt *S, const Stmt *Term) {
       LoopBody = FR->getBody();
       break;
     }
+    case Stmt::GRForStmtClass:
     case Stmt::ForStmtClass: {
       const ForStmt *FS = cast<ForStmt>(Term);
       if (isContainedByStmt(PM, FS->getInc(), S))
@@ -1925,6 +1930,7 @@ static bool isConditionForTerminator(const Stmt *S, const Stmt *Cond) {
     }
     case Stmt::IfStmtClass:
       return cast<IfStmt>(S)->getCond() == Cond;
+    case Stmt::GRForStmtClass:
     case Stmt::ForStmtClass:
       return cast<ForStmt>(S)->getCond() == Cond;
     case Stmt::WhileStmtClass:
