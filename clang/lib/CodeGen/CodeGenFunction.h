@@ -1171,6 +1171,9 @@ public:
   void EmitInitializerForField(FieldDecl *Field, LValue LHS, Expr *Init,
                                ArrayRef<VarDecl *> ArrayIndexes);
 
+  void EmitInitializerGRForField(FieldDecl *Field, LValue LHS, Expr *Init,
+                               ArrayRef<VarDecl *> ArrayIndexes);
+
   /// InitializeVTablePointer - Initialize the vtable pointer of the given
   /// subobject.
   ///
@@ -1823,6 +1826,7 @@ public:
   void EmitWhileStmt(const WhileStmt &S);
   void EmitDoStmt(const DoStmt &S);
   void EmitForStmt(const ForStmt &S);
+  void EmitGRForStmt(const GRForStmt &S);
   void EmitReturnStmt(const ReturnStmt &S);
   void EmitDeclStmt(const DeclStmt &S);
   void EmitBreakStmt(const BreakStmt &S);
