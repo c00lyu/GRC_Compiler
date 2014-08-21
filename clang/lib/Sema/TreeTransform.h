@@ -1158,7 +1158,7 @@ public:
   StmtResult RebuildForStmt(SourceLocation ForLoc, SourceLocation LParenLoc,
                             Stmt *Init, Sema::FullExprArg Cond,
                             VarDecl *CondVar, Sema::FullExprArg Inc,
-                            SourceLocation RParenLoc, Stmt *Body, StmtClass SC) {
+                            SourceLocation RParenLoc, Stmt *Body, Stmt::StmtClass SC) {
     return getSema().ActOnForStmt(ForLoc, LParenLoc, Init, Cond,
                                   CondVar, Inc, RParenLoc, Body, SC);
   }
@@ -2666,7 +2666,7 @@ StmtResult TreeTransform<Derived>::TransformStmt(Stmt *S) {
 
   switch (S->getStmtClass()) {
   case Stmt::NoStmtClass: break;
-
+  case Stmt::GRForStmtClass: return getDerived().TransformForStmt(cast<ForStmt>(S));
   // Transform individual statement nodes
 #define STMT(Node, Parent)                                              \
   case Stmt::Node##Class: return getDerived().Transform##Node(cast<Node>(S));
@@ -2716,6 +2716,7 @@ ExprResult TreeTransform<Derived>::TransformExpr(Expr *E) {
 
   switch (E->getStmtClass()) {
     case Stmt::NoStmtClass: break;
+	case Stmt::GRForStmtClass: break;
 #define STMT(Node, Parent) case Stmt::Node##Class: break;
 #define ABSTRACT_STMT(Stmt)
 #define EXPR(Node, Parent)                                              \

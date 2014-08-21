@@ -1519,7 +1519,7 @@ StmtResult
 Sema::ActOnForStmt(SourceLocation ForLoc, SourceLocation LParenLoc,
                    Stmt *First, FullExprArg second, Decl *secondVar,
                    FullExprArg third,
-                   SourceLocation RParenLoc, Stmt *Body, StmtClass SC) {
+                   SourceLocation RParenLoc, Stmt *Body, Stmt::StmtClass SC) {
   if (!getLangOpts().CPlusPlus) {
     if (DeclStmt *DS = dyn_cast_or_null<DeclStmt>(First)) {
       // C99 6.8.5p3: The declaration part of a 'for' statement shall only

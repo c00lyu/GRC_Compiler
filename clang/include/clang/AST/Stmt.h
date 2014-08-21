@@ -105,6 +105,7 @@ class Stmt {
 public:
   enum StmtClass {
     NoStmtClass = 0,
+    GRForStmtClass = 1,
 #define STMT(CLASS, PARENT) CLASS##Class,
 #define STMT_RANGE(BASE, FIRST, LAST) \
         first##BASE##Constant=FIRST##Class, last##BASE##Constant=LAST##Class,

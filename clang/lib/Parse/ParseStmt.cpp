@@ -1662,7 +1662,7 @@ StmtResult Parser::ParseForStatement(SourceLocation *TrailingElseLoc) {
 
   return Actions.ActOnForStmt(ForLoc, T.getOpenLocation(), FirstPart.take(),
                               SecondPart, SecondVar, ThirdPart,
-                              T.getCloseLocation(), Body.take(), isGRFor ? GRForStmtClass : ForStmtClass);
+                              T.getCloseLocation(), Body.take(), isGRFor ? Stmt::GRForStmtClass : Stmt::ForStmtClass);
 }
 
 /// ParseGotoStatement
