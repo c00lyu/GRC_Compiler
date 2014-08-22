@@ -32,6 +32,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Support/ValueHandle.h"
 #include "llvm/Transforms/Utils/SpecialCaseList.h"
+//#include "CGGRCRuntime.h"
 
 namespace llvm {
   class Module;
@@ -83,9 +84,10 @@ namespace CodeGen {
   class CGObjCRuntime;
   class CGOpenCLRuntime;
   class CGCUDARuntime;
+  class CGGRCRuntime;
   class BlockFieldFlags;
   class FunctionArgList;
-  
+
   struct OrderGlobalInits {
     unsigned int priority;
     unsigned int lex_order;
@@ -254,6 +256,7 @@ class CodeGenModule : public CodeGenTypeCache {
   CGObjCRuntime* ObjCRuntime;
   CGOpenCLRuntime* OpenCLRuntime;
   CGCUDARuntime* CUDARuntime;
+  CGGRCRuntime* GRCRuntime;
   CGDebugInfo* DebugInfo;
   ARCEntrypoints *ARCData;
   llvm::MDNode *NoObjCARCExceptionsMetadata;
@@ -393,6 +396,7 @@ class CodeGenModule : public CodeGenTypeCache {
 
   void createOpenCLRuntime();
   void createCUDARuntime();
+  void createGRCRuntime();
 
   bool isTriviallyRecursive(const FunctionDecl *F);
   bool shouldEmitFunction(GlobalDecl GD);
@@ -425,6 +429,7 @@ class CodeGenModule : public CodeGenTypeCache {
 
   const SanitizerOptions &SanOpts;
 
+  bool EmitSecondTaskFun;
   /// @}
 public:
   CodeGenModule(ASTContext &C, const CodeGenOptions &CodeGenOpts,
@@ -433,6 +438,13 @@ public:
 
   ~CodeGenModule();
 
+  void setEmitSecondTaskFun(bool value){
+	  EmitSecondTaskFun = value;
+  }
+
+  bool isEmitSecondTaskFun(){
+	  return EmitSecondTaskFun;
+  }
   /// Release - Finalize LLVM code generation.
   void Release();
 
@@ -458,6 +470,12 @@ public:
     assert(CUDARuntime != 0);
     return *CUDARuntime;
   }
+
+  /// getGRCRuntime() - Return a reference to the configured GRC runtime.
+    CGGRCRuntime &getGRCRuntime() {
+      assert(GRCRuntime != 0);
+      return *GRCRuntime;
+    }
 
   ARCEntrypoints &getARCEntrypoints() const {
     assert(getLangOpts().ObjCAutoRefCount && ARCData != 0);

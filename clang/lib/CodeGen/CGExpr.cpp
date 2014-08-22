@@ -1898,7 +1898,15 @@ LValue CodeGenFunction::EmitUnaryOpLValue(const UnaryOperator *E) {
 }
 
 LValue CodeGenFunction::EmitStringLiteralLValue(const StringLiteral *E) {
-  return MakeAddrLValue(CGM.GetAddrOfConstantStringFromLiteral(E),
+  llvm::Constant *GC = CGM.GetAddrOfConstantStringFromLiteral(E);
+  llvm::GlobalVariable *GV = dyn_cast<llvm::GlobalVariable>(GC);
+  const FunctionDecl *FD = cast<FunctionDecl>(CurFuncDecl);
+  if(getLangOpts().GRC &&
+		  FD &&
+		  GV &&
+		  FD->isGrTaskSpecified())
+	  addGrcTaskGlobalStringMetadata(GV);
+  return MakeAddrLValue(GC,
                         E->getType());
 }
 

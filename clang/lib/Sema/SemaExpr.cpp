@@ -4521,7 +4521,7 @@ Sema::ActOnGrcExecConfigExpr(Scope *S, SourceLocation LAtLoc,
   FunctionDecl *ConfigDecl = Context.getGrcConfigureCallDecl();
   if (!ConfigDecl)
     return ExprError(Diag(LAtLoc, diag::err_undeclared_var_use)
-                          << "GrcConfigureCall");
+                          << "__gr_ApplyForRPU");
   QualType ConfigQTy = ConfigDecl->getType();
 
   DeclRefExpr *ConfigDR = new (Context) DeclRefExpr(

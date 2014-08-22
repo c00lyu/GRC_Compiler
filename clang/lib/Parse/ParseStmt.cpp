@@ -165,6 +165,7 @@ Parser::ParseStatementOrDeclarationAfterAttributes(StmtVector &Stmts,
   const char *SemiError = 0;
   StmtResult Res;
   bool Syn = true;
+  bool isGrcParallel = false;
 
   // Cases in this switch statement should fall through if the parser expects
   // the token to end in a semicolon (in which case SemiError should be set),
@@ -247,7 +248,16 @@ Retry:
     return ParseCaseStatement();
   case tok::kw_default:             // C99 6.8.1: labeled-statement
     return ParseDefaultStatement();
-
+  case tok::kw___gr_parallel:{      // GR-C : __gr_parallel statement
+	  isGrcParallel = true;
+	  if(!(getCurScope()->getFnParent()->getFlags() & Scope::GrcTaskFnScope)){
+		  Diag(Tok, diag::err_expected_statement);
+		  SkipUntil(tok::l_brace, StopAtSemi | StopBeforeMatch);
+	      return StmtError();
+	  }
+	  ConsumeToken();
+	  return ParseGrcParallelCompoundStatement(false,isGrcParallel);
+  }
   case tok::l_brace:                // C99 6.8.2: compound-statement
     return ParseCompoundStatement();
   case tok::semi: {                 // C99 6.8.3p3: expression[opt] ';'
@@ -266,7 +276,6 @@ Retry:
     Res = ParseDoStatement();
     SemiError = "do/while";
     break;
-  case tok::kw___gr_for:                 // GRC: for-statement
   case tok::kw_for:                 // C99 6.8.5.3: for-statement
     return ParseForStatement(TrailingElseLoc);
 
@@ -766,6 +775,10 @@ StmtResult Parser::ParseCompoundStatement(bool isStmtExpr) {
   return ParseCompoundStatement(isStmtExpr, Scope::DeclScope);
 }
 
+StmtResult Parser::ParseGrcParallelCompoundStatement(bool isStmtExpr,bool isGrcParallel) {
+  return ParseCompoundStatement(isStmtExpr, Scope::DeclScope,isGrcParallel);
+}
+
 /// ParseCompoundStatement - Parse a "{}" block.
 ///
 ///       compound-statement: [C99 6.8.2]
@@ -794,7 +807,8 @@ StmtResult Parser::ParseCompoundStatement(bool isStmtExpr) {
 /// [OMP]   flush-directive
 ///
 StmtResult Parser::ParseCompoundStatement(bool isStmtExpr,
-                                          unsigned ScopeFlags) {
+                                          unsigned ScopeFlags,
+                                          bool isGrcParallel) {
   assert(Tok.is(tok::l_brace) && "Not a compount stmt!");
 
   // Enter a scope to hold everything within the compound stmt.  Compound
@@ -802,7 +816,7 @@ StmtResult Parser::ParseCompoundStatement(bool isStmtExpr,
   ParseScope CompoundScope(this, ScopeFlags);
 
   // Parse the statements in the body.
-  return ParseCompoundStatementBody(isStmtExpr);
+  return ParseCompoundStatementBody(isStmtExpr,isGrcParallel);
 }
 
 /// Parse any pragmas at the start of the compound expression. We handle these
@@ -851,7 +865,7 @@ void Parser::ParseCompoundStatementLeadingPragmas() {
 /// ActOnCompoundStmt action.  This expects the '{' to be the current token, and
 /// consume the '}' at the end of the block.  It does not manipulate the scope
 /// stack.
-StmtResult Parser::ParseCompoundStatementBody(bool isStmtExpr) {
+StmtResult Parser::ParseCompoundStatementBody(bool isStmtExpr,bool isGrcParallel) {
   PrettyStackTraceLoc CrashInfo(PP.getSourceManager(),
                                 Tok.getLocation(),
                                 "in compound statement ('{}')");
@@ -971,7 +985,7 @@ StmtResult Parser::ParseCompoundStatementBody(bool isStmtExpr) {
     CloseLoc = T.getCloseLocation();
 
   return Actions.ActOnCompoundStmt(T.getOpenLocation(), CloseLoc,
-                                   Stmts, isStmtExpr);
+                                   Stmts, isStmtExpr, isGrcParallel);
 }
 
 /// ParseParenExprOrCondition:
@@ -1410,10 +1424,7 @@ StmtResult Parser::ParseDoStatement() {
 /// [C++0x]   expression
 /// [C++0x]   braced-init-list            [TODO]
 StmtResult Parser::ParseForStatement(SourceLocation *TrailingElseLoc) {
-
-  bool isGRFor = Tok.is(tok::kw___gr_for) ? true : false;
-
-  assert((Tok.is(tok::kw_for) || Tok.is(tok::kw___gr_for)) && "Not a for stmt!");
+  assert(Tok.is(tok::kw_for) && "Not a for stmt!");
   SourceLocation ForLoc = ConsumeToken();  // eat the 'for'.
 
   if (Tok.isNot(tok::l_paren)) {
@@ -1662,7 +1673,7 @@ StmtResult Parser::ParseForStatement(SourceLocation *TrailingElseLoc) {
 
   return Actions.ActOnForStmt(ForLoc, T.getOpenLocation(), FirstPart.take(),
                               SecondPart, SecondVar, ThirdPart,
-                              T.getCloseLocation(), Body.take(), isGRFor ? Stmt::GRForStmtClass : Stmt::ForStmtClass);
+                              T.getCloseLocation(), Body.take());
 }
 
 /// ParseGotoStatement

@@ -292,7 +292,7 @@ sema::CompoundScopeInfo &Sema::getCurCompoundScope() const {
 }
 
 StmtResult Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R,
-                                   ArrayRef<Stmt *> Elts, bool isStmtExpr) {
+                                   ArrayRef<Stmt *> Elts, bool isStmtExpr,bool isGrcParallel) {
   const unsigned NumElts = Elts.size();
 
   // If we're in C89 mode, check that we don't have any decls after stmts.  If
@@ -331,7 +331,7 @@ StmtResult Sema::ActOnCompoundStmt(SourceLocation L, SourceLocation R,
       DiagnoseEmptyLoopBody(Elts[i], Elts[i + 1]);
   }
 
-  return Owned(new (Context) CompoundStmt(Context, Elts, L, R));
+  return Owned(new (Context) CompoundStmt(Context, Elts, L, R, isGrcParallel));
 }
 
 StmtResult
@@ -1519,7 +1519,7 @@ StmtResult
 Sema::ActOnForStmt(SourceLocation ForLoc, SourceLocation LParenLoc,
                    Stmt *First, FullExprArg second, Decl *secondVar,
                    FullExprArg third,
-                   SourceLocation RParenLoc, Stmt *Body, Stmt::StmtClass SC) {
+                   SourceLocation RParenLoc, Stmt *Body) {
   if (!getLangOpts().CPlusPlus) {
     if (DeclStmt *DS = dyn_cast_or_null<DeclStmt>(First)) {
       // C99 6.8.5p3: The declaration part of a 'for' statement shall only
@@ -1562,8 +1562,7 @@ Sema::ActOnForStmt(SourceLocation ForLoc, SourceLocation LParenLoc,
   return Owned(new (Context) ForStmt(Context, First,
                                      SecondResult.take(), ConditionVar,
                                      Third, Body, ForLoc, LParenLoc,
-                                     RParenLoc,
-									 SC));
+                                     RParenLoc));
 }
 
 /// In an Objective C collection iteration statement:

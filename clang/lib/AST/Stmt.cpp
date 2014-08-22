@@ -253,8 +253,8 @@ SourceLocation Stmt::getLocEnd() const {
 }
 
 CompoundStmt::CompoundStmt(const ASTContext &C, ArrayRef<Stmt*> Stmts,
-                           SourceLocation LB, SourceLocation RB)
-  : Stmt(CompoundStmtClass), LBracLoc(LB), RBracLoc(RB) {
+                           SourceLocation LB, SourceLocation RB,bool GP)
+  : Stmt(CompoundStmtClass), LBracLoc(LB), RBracLoc(RB) ,GrcParallel(GP){
   CompoundStmtBits.NumStmts = Stmts.size();
   assert(CompoundStmtBits.NumStmts == Stmts.size() &&
          "NumStmts doesn't fit in bits of CompoundStmtBits.NumStmts!");
@@ -852,9 +852,8 @@ void IfStmt::setConditionVariable(const ASTContext &C, VarDecl *V) {
 
 ForStmt::ForStmt(const ASTContext &C, Stmt *Init, Expr *Cond, VarDecl *condVar,
                  Expr *Inc, Stmt *Body, SourceLocation FL, SourceLocation LP,
-                 SourceLocation RP,
-				 StmtClass SC)
-  : Stmt(SC), ForLoc(FL), LParenLoc(LP), RParenLoc(RP)
+                 SourceLocation RP)
+  : Stmt(ForStmtClass), ForLoc(FL), LParenLoc(LP), RParenLoc(RP)
 {
   SubExprs[INIT] = Init;
   setConditionVariable(C, condVar);

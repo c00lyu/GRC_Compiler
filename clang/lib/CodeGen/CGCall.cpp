@@ -31,6 +31,7 @@
 #include "llvm/MC/SubtargetFeature.h"
 #include "llvm/Support/CallSite.h"
 #include "llvm/Transforms/Utils/Local.h"
+#include "CGGRCRuntime.h"
 using namespace clang;
 using namespace CodeGen;
 
@@ -2502,6 +2503,15 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
                           llvm::Attribute::NoUnwind))
     InvokeDest = getInvokeDest();
 
+  /*
+  // add grc setupArgument & callRPU function
+  if (CGM.getLangOpts().GRC)
+  	  if(const FunctionDecl *Fn = dyn_cast<FunctionDecl>(TargetDecl))
+  		  if(Fn->isGrTaskSpecified()){
+  			const GrcTaskCallExpr *GTCE = dyn_cast<GrcTaskCallExpr>(CE);
+  			CGM.getGRCRuntime().EmitRPUHead(*this,Fn,Args,GTCE->isSyn());
+  		  }
+*/
   llvm::CallSite CS;
   if (!InvokeDest) {
     CS = Builder.CreateCall(Callee, Args);
@@ -2529,6 +2539,14 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
 			  llvm::Function *CalledFun = CS.getCalledFunction();
 			  addGrcTaskCallMetadata(Inst,CalledFun,CE);
 		  }
+
+  // add grc callRPU function
+  if (CGM.getLangOpts().GRC)
+  	  if(const FunctionDecl *Fn = dyn_cast<FunctionDecl>(TargetDecl))
+  		  if(Fn->isGrTaskSpecified()){
+  			const GrcTaskCallExpr *GTCE = dyn_cast<GrcTaskCallExpr>(CE);
+  			CGM.getGRCRuntime().EmitCallRPU(*this,Fn,GTCE->isSyn());
+  		  }
 
   // If the call doesn't return, finish the basic block and clear the
   // insertion point; this allows the rest of IRgen to discard

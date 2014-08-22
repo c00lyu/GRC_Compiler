@@ -125,7 +125,6 @@ CXCursor cxcursor::MakeCXCursor(const Stmt *S, const Decl *Parent,
     K = CXCursor_DoStmt;
     break;
   
-  case Stmt::GRForStmtClass:
   case Stmt::ForStmtClass:
     K = CXCursor_ForStmt;
     break;

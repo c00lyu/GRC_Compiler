@@ -888,8 +888,17 @@ public:
                           CGM.getContext().getTargetAddressSpace(E->getType()));
       return C;
     }
-    case Expr::StringLiteralClass:
-      return CGM.GetAddrOfConstantStringFromLiteral(cast<StringLiteral>(E));
+    case Expr::StringLiteralClass:{
+      llvm::Constant *GC = CGM.GetAddrOfConstantStringFromLiteral(cast<StringLiteral>(E));
+      llvm::GlobalVariable *GV = dyn_cast<llvm::GlobalVariable>(GC);
+      const FunctionDecl *FD = cast<FunctionDecl>(CGF->CurFuncDecl);
+      if(CGF->getLangOpts().GRC &&
+    		  FD &&
+    		  GV &&
+    		  FD->isGrTaskSpecified())
+    	  CGF->addGrcTaskGlobalStringMetadata(GV);
+      return GC;
+    }
     case Expr::ObjCEncodeExprClass:
       return CGM.GetAddrOfConstantStringFromObjCEncode(cast<ObjCEncodeExpr>(E));
     case Expr::ObjCStringLiteralClass: {

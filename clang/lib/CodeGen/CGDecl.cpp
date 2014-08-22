@@ -965,6 +965,17 @@ CodeGenFunction::EmitAutoVarAlloca(const VarDecl &D) {
   DMEntry = DeclPtr;
   emission.Address = DeclPtr;
 
+  llvm::AllocaInst *AI = dyn_cast<llvm::AllocaInst>(DeclPtr);
+  if(getLangOpts().GRC && AI){
+	const FunctionDecl *FD = dyn_cast<FunctionDecl>(CurFuncDecl);
+	if(FD->isGrTaskSpecified()){
+		if(isInGrcParallel())
+			addGrcAddrespaceMetadata(AI,2);
+		else if(D.getName().startswith("__gr_shared_"))
+			addGrcAddrespaceMetadata(AI,1);
+	}
+  }
+
   // Emit debug info for local var declaration.
   if (HaveInsertPoint())
     if (CGDebugInfo *DI = getDebugInfo()) {
@@ -1616,6 +1627,9 @@ void CodeGenFunction::EmitParmDecl(const VarDecl &D, llvm::Value *Arg,
   if (isa<ImplicitParamDecl>(D)) {
     // The only implicit argument a block has is its literal.
     if (BlockInfo) {
+ //     if(getLangOpts().GRC && D.getName().startswith("__gr_shared_"))
+ //   	  GrcSharedVarList.push_back(Arg);
+
       LocalDeclMap[&D] = Arg;
       llvm::Value *LocalAddr = 0;
       if (CGM.getCodeGenOpts().OptimizationLevel == 0) {

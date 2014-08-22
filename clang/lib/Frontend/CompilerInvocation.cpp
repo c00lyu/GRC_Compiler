@@ -1150,7 +1150,6 @@ static void ParseLangArgs(LangOptions &Opts, ArgList &Args, InputKind IK,
       const LangStandard &Std = LangStandard::getLangStandardForKind(LangStd);
       switch (IK) {
       case IK_C:
-      case IK_GRC:
       case IK_ObjC:
       case IK_PreprocessedC:
       case IK_PreprocessedObjC:
@@ -1170,6 +1169,11 @@ static void ParseLangArgs(LangOptions &Opts, ArgList &Args, InputKind IK,
         if (!Std.isC99())
           Diags.Report(diag::err_drv_argument_not_allowed_with)
             << A->getAsString(Args) << "OpenCL";
+        break;
+      case IK_GRC:
+        if (!Std.isC99())
+          Diags.Report(diag::err_drv_argument_not_allowed_with)
+            << A->getAsString(Args) << "GRC";
         break;
       case IK_CUDA:
         if (!Std.isCPlusPlus())

@@ -52,7 +52,7 @@ Parser::Parser(Preprocessor &pp, Sema &actions, bool skipFunctionBodies)
   : PP(pp), Actions(actions), Diags(PP.getDiagnostics()),
     GreaterThanIsOperator(true), ColonIsSacred(false), 
     InMessageExpression(false), TemplateParameterDepth(0),
-    ParsingInObjCContainer(false) {
+    ParsingInObjCContainer(false),InGrcConfigCall(false) {
   SkipFunctionBodies = pp.isCodeCompletionEnabled() || skipFunctionBodies;
   Tok.startToken();
   Tok.setKind(tok::eof);
@@ -1090,9 +1090,14 @@ Decl *Parser::ParseFunctionDefinition(ParsingDeclarator &D,
       return FuncDecl;
     }
   }
-      
-  // Enter a scope for the function body.
-  ParseScope BodyScope(this, Scope::FnScope|Scope::DeclScope);
+
+  unsigned  Flags;
+  if(getLangOpts().GRC && D.getDeclSpec().isGrTaskSpecified())
+	  Flags = Scope::GrcTaskFnScope|Scope::FnScope|Scope::DeclScope;
+  else
+	  Flags = Scope::FnScope|Scope::DeclScope;
+	  // Enter a scope for the function body.
+	  ParseScope BodyScope(this, Flags);
 
   // Tell the actions module that we have entered a function definition with the
   // specified Declarator for the function.

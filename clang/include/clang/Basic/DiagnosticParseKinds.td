@@ -70,6 +70,8 @@ def err_invalid_longlong_spec : Error<"'long long %0' is invalid">;
 def err_invalid_complex_spec : Error<"'_Complex %0' is invalid">;
 def err_friend_storage_spec : Error<"'%0' is invalid in friend declarations">;
 
+def err_grc_parallel_used_outof_gr_task_function : Error<"'__gr_parallel' should not be used out of grc-task function body">;
+ 
 def ext_ident_list_in_param : Extension<
   "type-less parameter names in function declaration">;
 def ext_c99_variable_decl_in_for_loop : Extension<

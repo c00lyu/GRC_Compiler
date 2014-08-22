@@ -7354,7 +7354,7 @@ Sema::ActOnFunctionDeclarator(Scope *S, Declarator &D, DeclContext *DC,
     if (IdentifierInfo *II = NewFD->getIdentifier())
       if (!NewFD->isInvalidDecl() &&
           NewFD->getDeclContext()->getRedeclContext()->isTranslationUnit()) {
-        if (II->isStr("GrcConfigureCall")) {
+        if (II->isStr("__gr_ApplyForRPU")) {
           if (!R->getAs<FunctionType>()->getResultType()->isScalarType())
             Diag(NewFD->getLocation(), diag::err_config_scalar_return);
 

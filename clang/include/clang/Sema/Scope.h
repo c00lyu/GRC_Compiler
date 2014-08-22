@@ -94,7 +94,10 @@ public:
     FnTryCatchScope = 0x4000,
 
     /// \brief This is the scope of OpenMP executable directive
-    OpenMPDirectiveScope = 0x8000
+    OpenMPDirectiveScope = 0x8000,
+
+    /// \brief This is the scope of Grc Task function scope
+    GrcTaskFnScope = 0x10000
   };
 private:
   /// The parent scope for this scope.  This is null for the translation-unit
@@ -107,7 +110,7 @@ private:
 
   /// Flags - This contains a set of ScopeFlags, which indicates how the scope
   /// interrelates with other control flow statements.
-  unsigned short Flags;
+  unsigned  Flags;
 
   /// PrototypeDepth - This is the number of function prototype scopes
   /// enclosing this scope, including this scope.

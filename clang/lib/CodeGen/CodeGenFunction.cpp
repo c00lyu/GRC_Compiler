@@ -13,6 +13,7 @@
 
 #include "CodeGenFunction.h"
 #include "CGCUDARuntime.h"
+#include "CGGRCRuntime.h"
 #include "CGCXXABI.h"
 #include "CGDebugInfo.h"
 #include "CodeGenModule.h"
@@ -33,8 +34,8 @@ using namespace clang;
 using namespace CodeGen;
 
 CodeGenFunction::CodeGenFunction(CodeGenModule &cgm, bool suppressNewContext)
-    : CodeGenTypeCache(cgm), CGM(cgm), Target(cgm.getTarget()),
-      Builder(cgm.getModule().getContext()), CapturedStmtInfo(0),
+    : CodeGenTypeCache(cgm), CGM(cgm), Target(cgm.getTarget()),InGrcParallel(false),
+      GrcParallelNum(0),Builder(cgm.getModule().getContext()), CapturedStmtInfo(0),
       SanitizePerformTypeCheck(CGM.getSanOpts().Null |
                                CGM.getSanOpts().Alignment |
                                CGM.getSanOpts().ObjectSize |
@@ -720,6 +721,10 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
            !CGM.getCodeGenOpts().CUDAIsDevice &&
            FD->hasAttr<CUDAGlobalAttr>())
     CGM.getCUDARuntime().EmitDeviceStubBody(*this, Args);
+  else if (getLangOpts().GRC &&
+             FD->isGrTaskSpecified() &&
+             (!Fn->getName().startswith("__gr_task_")))
+	CGM.getGRCRuntime().EmitTaskFunBody(*this, Args);
   else if (isa<CXXConversionDecl>(FD) &&
            cast<CXXConversionDecl>(FD)->isLambdaToBlockPointerConversion()) {
     // The lambda conversion to block pointer is special; the semantics can't be
@@ -772,9 +777,7 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
   if (!CurFn->doesNotThrow())
     TryMarkNoThrow(CurFn);
 
-  //add grc task metadata
-  if(getLangOpts().GRC && FD->isGrTaskSpecified())
-	  addGrcTaskMetadata(Fn);
+
 }
 
 /// ContainsLabel - Return true if the statement contains a label in it.  If
@@ -1508,7 +1511,24 @@ void CodeGenFunction::addGrcTaskMetadata(llvm::Function *F){
 	  llvm::SmallVector<llvm::Value *, 3> MDVals;
 	  MDVals.push_back(F);
 	  MDVals.push_back(llvm::MDString::get(Ctx, "task"));
-	  MDVals.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), 1));
+	  //MDVals.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), 1));
+
+	  // Append metadata to rpu.annotations
+	  MD->addOperand(llvm::MDNode::get(Ctx, MDVals));
+}
+
+void CodeGenFunction::addGrcLibMetadata(llvm::Function *F){
+	  llvm::Module *M = F->getParent();
+	  llvm::LLVMContext &Ctx = M->getContext();
+
+	  // Get "rpu.annotations" metadata node
+	  llvm::NamedMDNode *MD = M->getOrInsertNamedMetadata("grc.lib");
+
+	  // Create !{<func-ref>, metadata !"kernel", i32 1} node
+	  llvm::SmallVector<llvm::Value *, 3> MDVals;
+	  MDVals.push_back(F);
+	  MDVals.push_back(llvm::MDString::get(Ctx, "lib called in task"));
+	  //MDVals.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), 1));
 
 	  // Append metadata to rpu.annotations
 	  MD->addOperand(llvm::MDNode::get(Ctx, MDVals));
@@ -1550,18 +1570,70 @@ void CodeGenFunction::addGrcTaskCallMetadata(llvm::Instruction *Inst, llvm::Func
 	  llvm::LLVMContext &Ctx = M->getContext();
 
 	  // Create !{<func-ref>, metadata !"taskcall", i32 1} node
-	  llvm::SmallVector<llvm::Value *, 3> MDVals;
+	  llvm::SmallVector<llvm::Value *, 4> MDVals;
 	  MDVals.push_back(CalledFun);
 	  MDVals.push_back(llvm::MDString::get(Ctx, "taskcall"));
 	  if (const GrcTaskCallExpr *E = dyn_cast<GrcTaskCallExpr>(CE)){
-		  if(E->isSyn())
+		  if(E->isSyn()){
 			  MDVals.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), 1));
-		  else
+			  MDVals.push_back(llvm::MDString::get(Ctx, "Synchronous"));
+		  }
+		  else{
 	  		  MDVals.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), 0));
+		  	  MDVals.push_back(llvm::MDString::get(Ctx, "Asynchronous"));
+		  }
 	  }
 
 	  // Append metadata to rpu.annotations
 	  Inst->setMetadata("grc.taskcall",llvm::MDNode::get(Ctx, MDVals));
+}
+
+void CodeGenFunction::addGrcAddrespaceMetadata(llvm::AllocaInst *Inst,unsigned int Addrespace){
+	  llvm::Function *F = Inst->getParent()->getParent();
+	  llvm::Module *M = F->getParent();
+	  llvm::LLVMContext &Ctx = M->getContext();
+	  int GrcParallelNum = getGrcParallelNum();
+	  // Create !{<func-ref>, metadata i32 2,"Located in Shared Memory"} node
+	  llvm::SmallVector<llvm::Value *, 4> MDVals;
+	  if(Addrespace == 1){
+		  MDVals.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), 1));
+		  MDVals.push_back(llvm::MDString::get(Ctx, "Located in ARM7 and Shared Memory"));
+		  MDVals.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), GrcParallelNum+1));
+		  MDVals.push_back(llvm::MDString::get(Ctx, "GrcParallel number"));
+	  }
+	  else if(Addrespace == 2){
+	  	  MDVals.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), 2));
+	  	  MDVals.push_back(llvm::MDString::get(Ctx, "Located in Shared Memory"));
+	  	  MDVals.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), GrcParallelNum));
+	  	  MDVals.push_back(llvm::MDString::get(Ctx, "GrcParallel number"));
+	  }
+	  else {
+	  	  MDVals.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), 0));
+	  	  MDVals.push_back(llvm::MDString::get(Ctx, "Located in ARM7 Memory"));
+	  	  MDVals.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), 0));
+	  	  MDVals.push_back(llvm::MDString::get(Ctx, "GrcParallel number"));
+	  }
+
+	  Inst->setMetadata("grc.addrespace",llvm::MDNode::get(Ctx, MDVals));
+}
+
+void CodeGenFunction::addGrcTaskGlobalStringMetadata(llvm::GlobalVariable *GV){
+	  llvm::Module *M = CurFn->getParent();
+	  llvm::LLVMContext &Ctx = M->getContext();
+
+	  // Get "rpu.annotations" metadata node
+	  llvm::NamedMDNode *MD = M->getOrInsertNamedMetadata("grc.string");
+
+	  // Create !{<func-ref>, metadata !"kernel", i32 1} node
+	  llvm::SmallVector<llvm::Value *, 3> MDVals;
+	  MDVals.push_back(GV);
+	  MDVals.push_back(llvm::MDString::get(Ctx, "string used in task function"));
+	  MDVals.push_back(CurFn);
+	  MDVals.push_back(llvm::MDString::get(Ctx, "task function"));
+	  //MDVals.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), 1));
+
+	  // Append metadata to rpu.annotations
+	  MD->addOperand(llvm::MDNode::get(Ctx, MDVals));
 }
 
 CodeGenFunction::CGCapturedStmtInfo::~CGCapturedStmtInfo() { }

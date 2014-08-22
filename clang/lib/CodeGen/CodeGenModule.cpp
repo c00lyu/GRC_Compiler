@@ -13,6 +13,7 @@
 
 #include "CodeGenModule.h"
 #include "CGCUDARuntime.h"
+#include "CGGRCRuntime.h"
 #include "CGCXXABI.h"
 #include "CGCall.h"
 #include "CGDebugInfo.h"
@@ -86,7 +87,7 @@ CodeGenModule::CodeGenModule(ASTContext &C, const CodeGenOptions &CGO,
           llvm::SpecialCaseList::createOrDie(CGO.SanitizerBlacklistFile)),
       SanOpts(SanitizerBlacklist->isIn(M) ? SanitizerOptions::Disabled
                                           : LangOpts.Sanitize) {
-
+  setEmitSecondTaskFun(false);
   // Initialize the type cache.
   llvm::LLVMContext &LLVMContext = M.getContext();
   VoidTy = llvm::Type::getVoidTy(LLVMContext);
@@ -112,6 +113,8 @@ CodeGenModule::CodeGenModule(ASTContext &C, const CodeGenOptions &CGO,
     createOpenCLRuntime();
   if (LangOpts.CUDA)
     createCUDARuntime();
+  if (LangOpts.GRC)
+     createGRCRuntime();
 
   // Enable TBAA unless it's suppressed. ThreadSanitizer needs TBAA even at O0.
   if (SanOpts.Thread ||
@@ -137,6 +140,7 @@ CodeGenModule::~CodeGenModule() {
   delete ObjCRuntime;
   delete OpenCLRuntime;
   delete CUDARuntime;
+  delete GRCRuntime;
   delete TheTargetCodeGenInfo;
   delete &ABI;
   delete TBAA;
@@ -170,6 +174,10 @@ void CodeGenModule::createOpenCLRuntime() {
 
 void CodeGenModule::createCUDARuntime() {
   CUDARuntime = CreateNVCUDARuntime(*this);
+}
+
+void CodeGenModule::createGRCRuntime() {
+  GRCRuntime = CreateGRCRuntime(*this);
 }
 
 void CodeGenModule::applyReplacements() {
@@ -1359,6 +1367,17 @@ void CodeGenModule::EmitGlobalDefinition(GlobalDecl GD) {
       return;
     }
 
+    const FunctionDecl *FD = cast<FunctionDecl>(GD.getDecl());
+    if (getLangOpts().GRC &&
+                 FD->isGrTaskSpecified()){
+    	EmitGlobalFunctionDefinition(GD);
+
+    	setEmitSecondTaskFun(true);
+    	EmitGlobalFunctionDefinition(GD);
+    	setEmitSecondTaskFun(false);
+    	return;
+    }
+
     return EmitGlobalFunctionDefinition(GD);
   }
   
@@ -1433,6 +1452,31 @@ CodeGenModule::GetOrCreateLLVMFunction(StringRef MangledName,
                                              B));
   }
 
+  // add Grc Task Function Metadata
+  if(getLangOpts().GRC && D){
+	  const FunctionDecl *fd = cast<FunctionDecl>(D);
+	  StringRef FnName(F->getName());
+	  if(fd->isGrTaskSpecified() &&
+			  FnName.startswith("__gr_task_"))
+		  CodeGenFunction(*this).addGrcTaskMetadata(F);
+  }
+
+  // add NamedMeatadata for the library function called in task funciton
+  if(getLangOpts().GRC){
+  	  StringRef FnName(F->getName());
+
+  	  if((FnName.startswith("__gr_")
+  		 && (!FnName.equals("__gr_get_RPUs"))
+  		 && (!FnName.equals("__gr_barrier"))
+  		 && (!FnName.equals("__gr_ApplyForRPU"))
+  		 && (!FnName.equals("__gr_SetupRPUArgument"))
+  		 && (!FnName.equals("__gr_CallRPU"))
+  		 && (!FnName.startswith("__gr_task_")))
+  		 || (FnName.equals("__gr_SetupPEAArgument"))
+  		 || (FnName.equals("__gr_CallPEA")))
+  		  CodeGenFunction(*this).addGrcLibMetadata(F);
+    }
+
   // This is the first use or definition of a mangled name.  If there is a
   // deferred decl with this name, remember that we need to emit it at the end
   // of the file.
@@ -1499,7 +1543,15 @@ llvm::Constant *CodeGenModule::GetAddrOfFunction(GlobalDecl GD,
   if (!Ty)
     Ty = getTypes().ConvertType(cast<ValueDecl>(GD.getDecl())->getType());
   
-  StringRef MangledName = getMangledName(GD);
+  std::string MangledName(getMangledName(GD).data());
+
+  const FunctionDecl *FD = cast<FunctionDecl>(GD.getDecl());
+  if(getLangOpts().GRC &&
+		  FD->isGrTaskSpecified() &&
+		  isEmitSecondTaskFun()){
+	  std::string tag("__gr_task_");
+	  MangledName = tag+MangledName;
+  }
   return GetOrCreateLLVMFunction(MangledName, Ty, GD, ForVTable);
 }
 
@@ -2164,6 +2216,9 @@ void CodeGenModule::EmitGlobalFunctionDefinition(GlobalDecl GD) {
   MaybeHandleStaticInExternC(D, Fn);
 
   CodeGenFunction(*this).GenerateCode(D, Fn, FI);
+  //add grc task metadata
+//  if(getLangOpts().GRC && D->isGrTaskSpecified())
+//	  CodeGenFunction(*this).addGrcTaskMetadata(Fn);
 
   SetFunctionDefinitionAttributes(D, Fn);
   SetLLVMFunctionAttributesForDefinition(D, Fn);

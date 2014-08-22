@@ -208,7 +208,7 @@ ExprResult Parser::ParseConstantExpression(TypeCastState isTypeCast) {
 bool Parser::isNotExpressionStart() {
   tok::TokenKind K = Tok.getKind();
   if (K == tok::l_brace || K == tok::r_brace  ||
-      K == tok::kw_for  || K == tok::kw___gr_for || K == tok::kw_while ||
+      K == tok::kw_for  || K == tok::kw_while ||
       K == tok::kw_if   || K == tok::kw_else  ||
       K == tok::kw_goto || K == tok::kw_try)
     return true;
@@ -1242,6 +1242,8 @@ ExprResult Parser::ParseCastExpression(bool isUnaryExpression,
     return ParseExpressionTrait();
       
   case tok::at: {
+	if(getLangOpts().GRC)
+		break;
     SourceLocation AtLoc = ConsumeToken();
     return ParseObjCAtExpression(AtLoc);
   }
@@ -1371,10 +1373,15 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS,bool IsSyn) {
       T.consumeClose();
       break;
     }
-    case tok::atcolon:
+    case tok::at:
     case tok::l_paren:         // p-e: p-e '(' argument-expression-list[opt] ')'
     case tok::lesslessless: {  // p-e: p-e '<<<' argument-expression-list '>>>'
                                //   '(' argument-expression-list[opt] ')'
+      if(Tok.getKind()==tok::at && getLangOpts().GRC && isInGrcConfigCall()){
+    	  setInGrcConfigCall(false);
+    	  return LHS;
+      }
+
       tok::TokenKind OpKind = Tok.getKind();
       bool IsExecConfig = false;
 
@@ -1426,10 +1433,12 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS,bool IsSyn) {
             ExecConfig = ECResult.get();
         }
       }
-      else if(getLangOpts().GRC && OpKind == tok::atcolon){
+      else if(getLangOpts().GRC && OpKind == tok::at){
           ExprVector ExecConfigExprs;
           CommaLocsTy ExecConfigCommaLocs;
           SourceLocation OpenLoc = ConsumeToken();
+
+          setInGrcConfigCall(true);
 
           if (ParseSimpleExpressionList(ExecConfigExprs, ExecConfigCommaLocs)) {
             LHS = ExprError();
@@ -1438,14 +1447,15 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS,bool IsSyn) {
           IsExecConfig = true;
 
           SourceLocation CloseLoc = Tok.getLocation();
-          if (Tok.is(tok::colonat)) {
+          if (Tok.is(tok::at)) {
             ConsumeToken();
+            setInGrcConfigCall(false);
           } else if (LHS.isInvalid()) {
-            SkipUntil(tok::colonat, StopAtSemi);
+            SkipUntil(tok::at, StopAtSemi);
           } else {
             // There was an error closing the brackets
             Diag(Tok, diag::err_expected_ggg);
-            Diag(OpenLoc, diag::note_matching) << ":@";
+            Diag(OpenLoc, diag::note_matching) << "@";
             SkipUntil(tok::colonat, StopAtSemi);
             LHS = ExprError();
           }

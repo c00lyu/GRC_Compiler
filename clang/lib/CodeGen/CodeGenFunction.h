@@ -126,6 +126,8 @@ public:
 
   CodeGenModule &CGM;  // Per-module state.
   const TargetInfo &Target;
+  bool InGrcParallel;
+  int GrcParallelNum;
 
   typedef std::pair<llvm::Value *, llvm::Value *> ComplexPairTy;
   CGBuilderTy Builder;
@@ -813,6 +815,8 @@ private:
   typedef llvm::DenseMap<const Decl*, llvm::Value*> DeclMapTy;
   DeclMapTy LocalDeclMap;
 
+  llvm::SmallVector<llvm::Value*,16> GrcSharedVarList;
+
   /// LabelMap - This keeps track of the LLVM basic block for each C label.
   llvm::DenseMap<const LabelDecl*, JumpDest> LabelMap;
 
@@ -1171,9 +1175,6 @@ public:
   void EmitInitializerForField(FieldDecl *Field, LValue LHS, Expr *Init,
                                ArrayRef<VarDecl *> ArrayIndexes);
 
-  void EmitInitializerGRForField(FieldDecl *Field, LValue LHS, Expr *Init,
-                               ArrayRef<VarDecl *> ArrayIndexes);
-
   /// InitializeVTablePointer - Initialize the vtable pointer of the given
   /// subobject.
   ///
@@ -1461,6 +1462,30 @@ public:
     llvm::Value *Res = LocalDeclMap[VD];
     assert(Res && "Invalid argument to GetAddrOfLocalVar(), no decl!");
     return Res;
+  }
+
+  void BuildGrcSharedVarList(){
+	  if (LocalDeclMap.empty()) return;
+
+	  for (llvm::DenseMap<const Decl*, llvm::Value*>::iterator
+	         I = LocalDeclMap.begin(), E = LocalDeclMap.end(); I != E; ++I) {
+	    const Decl *D = I->first;
+	    llvm::Value *Addr = I->second;
+
+	    if (const VarDecl *VD = dyn_cast<VarDecl>(D)){
+	    	StringRef Name = VD->getName();
+	    	if(Name.startswith("__gr_shared_"))
+	    		GrcSharedVarList.push_back(Addr);
+	    }
+	  }
+  }
+
+  SmallVector<llvm::Value*,16> &getGrcSharedVarList(){
+	  return GrcSharedVarList;
+  }
+
+  void ClearGrcSharedVarList(){
+	  GrcSharedVarList.clear();
   }
 
   /// getOpaqueLValueMapping - Given an opaque value expression (which
@@ -1826,7 +1851,6 @@ public:
   void EmitWhileStmt(const WhileStmt &S);
   void EmitDoStmt(const DoStmt &S);
   void EmitForStmt(const ForStmt &S);
-  void EmitGRForStmt(const ForStmt &S);
   void EmitReturnStmt(const ReturnStmt &S);
   void EmitDeclStmt(const DeclStmt &S);
   void EmitBreakStmt(const BreakStmt &S);
@@ -2576,15 +2600,33 @@ private:
   /// GetPointeeAlignment - Given an expression with a pointer type, emit the
   /// value and compute our best estimate of the alignment of the pointee.
   std::pair<llvm::Value*, unsigned> EmitPointerWithAlignment(const Expr *Addr);
-
+public:
   //===--------------------------------------------------------------------===//
   //                         add grc task
   //===--------------------------------------------------------------------===//
   void addGrcTaskMetadata(llvm::Function *F);
+  void addGrcLibMetadata(llvm::Function *F);
   RValue EmitGrcTaskCallExpr(const GrcTaskCallExpr *E,
                              ReturnValueSlot ReturnValue);
   void addGrcTaskCallMetadata(llvm::Instruction *Inst, llvm::Function *CalledFun,const CallExpr *CE);
 
+  void EnterGrcParallel(){
+	  InGrcParallel = true;
+	  ++GrcParallelNum;
+  }
+  void ExitGrcParallel(){
+	  InGrcParallel = false;
+  }
+  int getGrcParallelNum(){
+	  return GrcParallelNum;
+  }
+  bool isInGrcParallel(){
+	  return InGrcParallel;
+  }
+
+  void addGrcAddrespaceMetadata(llvm::AllocaInst *Inst,unsigned int Addrespace);
+
+  void addGrcTaskGlobalStringMetadata(llvm::GlobalVariable *GV);
 };
 
 /// Helper class with most of the code for saving a value for a

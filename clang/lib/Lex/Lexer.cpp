@@ -3545,7 +3545,7 @@ LexNextToken:
           Kind = tok::atcolon;
           CurPtr = ConsumeChar(CurPtr, SizeTmp, Result);
        } else{
-    	  Kind = tok::unknown;
+    	  Kind = tok::at;
        }
     } else
       Kind = tok::unknown;

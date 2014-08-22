@@ -174,6 +174,8 @@ class Parser : public CodeCompletionHandler {
   /// should not be set directly.
   bool InMessageExpression;
 
+  /// when true, we are parsing the argument expression list of function GrcConfigCall
+  bool InGrcConfigCall;
   /// The "depth" of the template parameters currently being parsed.
   unsigned TemplateParameterDepth;
 
@@ -1506,11 +1508,14 @@ private:
   StmtResult ParseCaseStatement(bool MissingCase = false,
                                 ExprResult Expr = ExprResult());
   StmtResult ParseDefaultStatement();
+  StmtResult ParseGrcParallelCompoundStatement(bool isStmtExpr = false,bool isGrcParallel = false);
   StmtResult ParseCompoundStatement(bool isStmtExpr = false);
   StmtResult ParseCompoundStatement(bool isStmtExpr,
-                                    unsigned ScopeFlags);
+                                    unsigned ScopeFlags,
+                                    bool isGrcParallel = false);
   void ParseCompoundStatementLeadingPragmas();
-  StmtResult ParseCompoundStatementBody(bool isStmtExpr = false);
+  StmtResult ParseCompoundStatementBody(bool isStmtExpr = false,
+		                                bool isGrcParallel = false);
   bool ParseParenExprOrCondition(ExprResult &ExprResult,
                                  Decl *&DeclResult,
                                  SourceLocation Loc,
@@ -2317,6 +2322,16 @@ private:
                                          MacroInfo *MacroInfo,
                                          unsigned ArgumentIndex);
   virtual void CodeCompleteNaturalLanguage();
+
+public:
+  //===--------------------------------------------------------------------===//
+  // GrcConfigCall
+  void setInGrcConfigCall(bool InOrOut){
+	  InGrcConfigCall = InOrOut;
+  }
+  bool isInGrcConfigCall(){
+	  return InGrcConfigCall;
+  }
 };
 
 }  // end namespace clang

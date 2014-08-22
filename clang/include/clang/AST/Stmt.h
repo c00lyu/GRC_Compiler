@@ -105,7 +105,6 @@ class Stmt {
 public:
   enum StmtClass {
     NoStmtClass = 0,
-    GRForStmtClass = 1,
 #define STMT(CLASS, PARENT) CLASS##Class,
 #define STMT_RANGE(BASE, FIRST, LAST) \
         first##BASE##Constant=FIRST##Class, last##BASE##Constant=LAST##Class,
@@ -544,13 +543,14 @@ public:
 class CompoundStmt : public Stmt {
   Stmt** Body;
   SourceLocation LBracLoc, RBracLoc;
+  bool GrcParallel;
 public:
   CompoundStmt(const ASTContext &C, ArrayRef<Stmt*> Stmts,
-               SourceLocation LB, SourceLocation RB);
+               SourceLocation LB, SourceLocation RB,bool GP=false);
 
   // \brief Build an empty compound statement with a location.
   explicit CompoundStmt(SourceLocation Loc)
-    : Stmt(CompoundStmtClass), Body(0), LBracLoc(Loc), RBracLoc(Loc) {
+    : Stmt(CompoundStmtClass), Body(0), LBracLoc(Loc), RBracLoc(Loc) ,GrcParallel(false){
     CompoundStmtBits.NumStmts = 0;
   }
 
@@ -607,6 +607,8 @@ public:
   SourceLocation getRBracLoc() const { return RBracLoc; }
   void setRBracLoc(SourceLocation L) { RBracLoc = L; }
 
+  void setGrcParallel(bool GP){GrcParallel = GP;}
+  bool isGrcParallel() const {return GrcParallel;}
   static bool classof(const Stmt *T) {
     return T->getStmtClass() == CompoundStmtClass;
   }
@@ -1120,7 +1122,7 @@ class ForStmt : public Stmt {
 public:
   ForStmt(const ASTContext &C, Stmt *Init, Expr *Cond, VarDecl *condVar,
           Expr *Inc, Stmt *Body, SourceLocation FL, SourceLocation LP,
-          SourceLocation RP, StmtClass SC);
+          SourceLocation RP);
 
   /// \brief Build an empty for statement.
   explicit ForStmt(EmptyShell Empty) : Stmt(ForStmtClass, Empty) { }
@@ -1171,7 +1173,7 @@ public:
   }
 
   static bool classof(const Stmt *T) {
-    return (T->getStmtClass() == ForStmtClass) || (T->getStmtClass() == GRForStmtClass);
+    return T->getStmtClass() == ForStmtClass;
   }
 
   // Iterators
@@ -2089,7 +2091,35 @@ public:
 
   friend class ASTStmtReader;
 };
+/*
+class GrcParallelStmt : public Stmt {
+  CompoundStmt* Body;
+  SourceLocation GrcParallelLoc;
 
+public:
+  GrcParallelStmt(Stmt* CS, SourceLocation GPL)
+  :Stmt(GrcParallelStmtClass){
+	  Body = CS;
+	  GrcParallelLoc = GPL;
+  }
+
+  Stmt *getBody() { return Body; }
+  const Stmt *getBody() const { return Body; }
+  void setBody(Stmt *S) { Body = S; }
+
+  SourceLocation getGrcParallelLoc() const { return GrcParallelLoc; }
+  void setGrcParallelLoc(SourceLocation L) { GrcParallelLoc = L; }
+
+  SourceLocation getLocStart() const LLVM_READONLY { return GrcParallelLoc; }
+  SourceLocation getLocEnd() const LLVM_READONLY {
+    return Body->getLocEnd();
+  }
+
+  static bool classof(const Stmt *T) {
+    return T->getStmtClass() == GrcParallelStmtClass;
+  }
+};
+*/
 }  // end namespace clang
 
 #endif

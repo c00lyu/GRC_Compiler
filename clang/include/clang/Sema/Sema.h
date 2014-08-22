@@ -2854,7 +2854,7 @@ public:
   void ActOnStartOfCompoundStmt();
   void ActOnFinishOfCompoundStmt();
   StmtResult ActOnCompoundStmt(SourceLocation L, SourceLocation R,
-                               ArrayRef<Stmt *> Elts, bool isStmtExpr);
+                               ArrayRef<Stmt *> Elts, bool isStmtExpr,bool isGrcParallel=false);
 
   /// \brief A RAII object to enter scope of a compound statement.
   class CompoundScopeRAII {
@@ -2914,8 +2914,7 @@ public:
                           Decl *SecondVar,
                           FullExprArg Third,
                           SourceLocation RParenLoc,
-                          Stmt *Body,
-						  Stmt::StmtClass SC);
+                          Stmt *Body);
   ExprResult CheckObjCForCollectionOperand(SourceLocation forLoc,
                                            Expr *collection);
   StmtResult ActOnObjCForCollectionStmt(SourceLocation ForColLoc,
