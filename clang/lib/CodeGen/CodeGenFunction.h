@@ -1851,6 +1851,7 @@ public:
   void EmitWhileStmt(const WhileStmt &S);
   void EmitDoStmt(const DoStmt &S);
   void EmitForStmt(const ForStmt &S);
+  void EmitGRForStmt(const ForStmt &S);
   void EmitReturnStmt(const ReturnStmt &S);
   void EmitDeclStmt(const DeclStmt &S);
   void EmitBreakStmt(const BreakStmt &S);

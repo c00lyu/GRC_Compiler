@@ -276,6 +276,7 @@ Retry:
     Res = ParseDoStatement();
     SemiError = "do/while";
     break;
+  case tok::kw___gr_for:                 // GRC: for-statement
   case tok::kw_for:                 // C99 6.8.5.3: for-statement
     return ParseForStatement(TrailingElseLoc);
 
@@ -1424,7 +1425,8 @@ StmtResult Parser::ParseDoStatement() {
 /// [C++0x]   expression
 /// [C++0x]   braced-init-list            [TODO]
 StmtResult Parser::ParseForStatement(SourceLocation *TrailingElseLoc) {
-  assert(Tok.is(tok::kw_for) && "Not a for stmt!");
+  bool isGRFor = Tok.is(tok::kw___gr_for) ? true : false;
+  assert((Tok.is(tok::kw_for) || Tok.is(tok::kw___gr_for)) && "Not a for stmt!");
   SourceLocation ForLoc = ConsumeToken();  // eat the 'for'.
 
   if (Tok.isNot(tok::l_paren)) {
@@ -1673,7 +1675,7 @@ StmtResult Parser::ParseForStatement(SourceLocation *TrailingElseLoc) {
 
   return Actions.ActOnForStmt(ForLoc, T.getOpenLocation(), FirstPart.take(),
                               SecondPart, SecondVar, ThirdPart,
-                              T.getCloseLocation(), Body.take());
+                              T.getCloseLocation(), Body.take(), isGRFor ? Stmt::GRForStmtClass : Stmt::ForStmtClass);
 }
 
 /// ParseGotoStatement

@@ -473,6 +473,7 @@ KEYWORD(__gr_task                    , KEYGRC)
 KEYWORD(__gr_syn                     , KEYGRC)
 KEYWORD(__gr_asyn                    , KEYGRC)
 KEYWORD(__gr_parallel                , KEYGRC)
+KEYWORD(__gr_for                     , KEYGRC)
 
 // Borland Extensions.
 KEYWORD(__pascal                    , KEYALL)

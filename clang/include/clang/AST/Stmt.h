@@ -105,6 +105,7 @@ class Stmt {
 public:
   enum StmtClass {
     NoStmtClass = 0,
+	GRForStmtClass = 1,
 #define STMT(CLASS, PARENT) CLASS##Class,
 #define STMT_RANGE(BASE, FIRST, LAST) \
         first##BASE##Constant=FIRST##Class, last##BASE##Constant=LAST##Class,
@@ -1122,7 +1123,7 @@ class ForStmt : public Stmt {
 public:
   ForStmt(const ASTContext &C, Stmt *Init, Expr *Cond, VarDecl *condVar,
           Expr *Inc, Stmt *Body, SourceLocation FL, SourceLocation LP,
-          SourceLocation RP);
+           SourceLocation RP, StmtClass SC);
 
   /// \brief Build an empty for statement.
   explicit ForStmt(EmptyShell Empty) : Stmt(ForStmtClass, Empty) { }
@@ -1173,7 +1174,7 @@ public:
   }
 
   static bool classof(const Stmt *T) {
-    return T->getStmtClass() == ForStmtClass;
+    return (T->getStmtClass() == ForStmtClass) || (T->getStmtClass() == GRForStmtClass);
   }
 
   // Iterators

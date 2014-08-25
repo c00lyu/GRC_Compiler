@@ -3250,7 +3250,8 @@ static EvalStmtResult EvaluateStmt(APValue &Result, EvalInfo &Info,
       break;
     }
 
-    case Stmt::ForStmtClass: {
+    case Stmt::GRForStmtClass:
+	case Stmt::ForStmtClass: {
       const ForStmt *FS = cast<ForStmt>(S);
       EvalStmtResult ESR =
           EvaluateLoopBody(Result, Info, FS->getBody(), Case);
@@ -3376,7 +3377,8 @@ static EvalStmtResult EvaluateStmt(APValue &Result, EvalInfo &Info,
     } while (Continue);
     return ESR_Succeeded;
   }
-
+  
+  case Stmt::GRForStmtClass:
   case Stmt::ForStmtClass: {
     const ForStmt *FS = cast<ForStmt>(S);
     BlockScopeRAII Scope(Info);
