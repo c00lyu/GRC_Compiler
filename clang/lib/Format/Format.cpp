@@ -408,7 +408,7 @@ public:
                TheLine->First->is(tok::kw_if)) {
       return tryMergeSimpleControlStatement(I, E, Limit);
     } else if (Style.AllowShortLoopsOnASingleLine &&
-               TheLine->First->isOneOf(tok::kw_for, tok::kw_while, tok::kw___gr_for)) {
+               TheLine->First->isOneOf(tok::kw_for, tok::kw_while)) {
       return tryMergeSimpleControlStatement(I, E, Limit);
     } else if (TheLine->InPPDirective && (TheLine->First->HasUnescapedNewline ||
                                           TheLine->First->IsFirst)) {
@@ -449,7 +449,7 @@ private:
       return 0;
     if (1 + I[1]->Last->TotalLength > Limit)
       return 0;
-    if (I[1]->First->isOneOf(tok::semi, tok::kw_if, tok::kw_for, tok::kw___gr_for,
+    if (I[1]->First->isOneOf(tok::semi, tok::kw_if, tok::kw_for,
                                    tok::kw_while) ||
         I[1]->First->Type == TT_LineComment)
       return 0;
@@ -474,7 +474,7 @@ private:
     AnnotatedLine &Line = **I;
     if (Line.First->isOneOf(tok::kw_if, tok::kw_while, tok::kw_do, tok::r_brace,
                             tok::kw_else, tok::kw_try, tok::kw_catch,
-                            tok::kw_for, tok::kw___gr_for,
+                            tok::kw_for,
                             // This gets rid of all ObjC @ keywords and methods.
                             tok::at, tok::minus, tok::plus))
       return 0;

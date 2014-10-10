@@ -6224,6 +6224,7 @@ static FunctionDecl* CreateNewFunctionDecl(Sema &SemaRef, Declarator &D,
   FunctionDecl *NewFD = 0;
   bool isInline = D.getDeclSpec().isInlineSpecified();
   bool isGrTask = D.getDeclSpec().isGrTaskSpecified();
+  bool isGrPEA = D.getDeclSpec().isGrPEASpecified();
 
   if (!SemaRef.getLangOpts().CPlusPlus) {
     // Determine whether the function was written with a
@@ -6239,7 +6240,7 @@ static FunctionDecl* CreateNewFunctionDecl(Sema &SemaRef, Declarator &D,
                                  D.getLocStart(), NameInfo, R, 
                                  TInfo, SC, isInline, 
                                  HasPrototype, false,
-                                 isGrTask);
+                                 isGrTask, isGrPEA);
     if (D.isInvalidType())
       NewFD->setInvalidDecl();
 

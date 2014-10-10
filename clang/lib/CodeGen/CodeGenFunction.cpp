@@ -1516,6 +1516,22 @@ void CodeGenFunction::addGrcTaskMetadata(llvm::Function *F){
 	  // Append metadata to rpu.annotations
 	  MD->addOperand(llvm::MDNode::get(Ctx, MDVals));
 }
+void CodeGenFunction::addGrcPEAMetadata(llvm::Function *F){
+	  llvm::Module *M = F->getParent();
+	  llvm::LLVMContext &Ctx = M->getContext();
+
+	  // Get "rpu.annotations" metadata node
+	  llvm::NamedMDNode *MD = M->getOrInsertNamedMetadata("grc.peas");
+
+	  // Create !{<func-ref>, metadata !"kernel", i32 1} node
+	  llvm::SmallVector<llvm::Value *, 3> MDVals;
+	  MDVals.push_back(F);
+	  MDVals.push_back(llvm::MDString::get(Ctx, "pea"));
+	  //MDVals.push_back(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), 1));
+
+	  // Append metadata to rpu.annotations
+	  MD->addOperand(llvm::MDNode::get(Ctx, MDVals));
+}
 
 void CodeGenFunction::addGrcLibMetadata(llvm::Function *F){
 	  llvm::Module *M = F->getParent();

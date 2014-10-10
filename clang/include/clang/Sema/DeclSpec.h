@@ -338,6 +338,7 @@ private:
   // function-specifier
   unsigned FS_inline_specified : 1;
   unsigned FS___gr_task_specified : 1;
+  unsigned FS___gr_pea_specified : 1;
   unsigned FS_forceinline_specified: 1;
   unsigned FS_virtual_specified : 1;
   unsigned FS_explicit_specified : 1;
@@ -382,7 +383,7 @@ private:
   SourceLocation TSTNameLoc;
   SourceRange TypeofParensRange;
   SourceLocation TQ_constLoc, TQ_restrictLoc, TQ_volatileLoc, TQ_atomicLoc;
-  SourceLocation FS_inlineLoc,FS___gr_taskLoc, FS_virtualLoc, FS_explicitLoc, FS_noreturnLoc;
+  SourceLocation FS_inlineLoc,FS___gr_taskLoc, FS___gr_peaLoc, FS_virtualLoc, FS_explicitLoc, FS_noreturnLoc;
   SourceLocation FS_forceinlineLoc;
   SourceLocation FriendLoc, ModulePrivateLoc, ConstexprLoc;
 
@@ -423,6 +424,7 @@ public:
       TypeQualifiers(TQ_unspecified),
       FS_inline_specified(false),
       FS___gr_task_specified(false),
+      FS___gr_pea_specified(false),
       FS_forceinline_specified(false),
       FS_virtual_specified(false),
       FS_explicit_specified(false),
@@ -551,11 +553,17 @@ public:
   bool isGrTaskSpecified() const {
       return FS___gr_task_specified;
   }
+    bool isGrPEASpecified() const {
+      return FS___gr_pea_specified;
+  } 
   SourceLocation getInlineSpecLoc() const {
     return FS_inline_specified ? FS_inlineLoc : FS_forceinlineLoc;
   }
   SourceLocation getGrTaskSpecLoc() const {
       return FS___gr_taskLoc;
+  }
+  SourceLocation getGrPEASpecLoc() const {
+      return FS___gr_peaLoc;
   }
 
   bool isVirtualSpecified() const { return FS_virtual_specified; }
@@ -570,6 +578,7 @@ public:
   void ClearFunctionSpecs() {
     FS_inline_specified = false;
     FS___gr_task_specified = false;
+    FS___gr_pea_specified = false;
     FS_inlineLoc = SourceLocation();
     FS_forceinline_specified = false;
     FS_forceinlineLoc = SourceLocation();
@@ -663,6 +672,8 @@ public:
   bool setFunctionSpecInline(SourceLocation Loc, const char *&PrevSpec,
                              unsigned &DiagID);
   bool setFunctionSpecGrTask(SourceLocation Loc, const char *&PrevSpec,
+                               unsigned &DiagID);
+  bool setFunctionSpecGrPEA(SourceLocation Loc, const char *&PrevSpec,
                                unsigned &DiagID);
   bool setFunctionSpecForceInline(SourceLocation Loc, const char *&PrevSpec,
                                   unsigned &DiagID);

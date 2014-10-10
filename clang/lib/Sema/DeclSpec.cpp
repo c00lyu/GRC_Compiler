@@ -354,7 +354,7 @@ unsigned DeclSpec::getParsedSpecifiers() const {
   if (hasTypeSpecifier())
     Res |= PQ_TypeSpecifier;
 
-  if (FS_inline_specified || FS___gr_task_specified || FS_virtual_specified || FS_explicit_specified ||
+  if (FS_inline_specified || FS___gr_task_specified || FS___gr_pea_specified || FS_virtual_specified || FS_explicit_specified ||
       FS_noreturn_specified || FS_forceinline_specified)
     Res |= PQ_FunctionSpecifier;
   return Res;
@@ -793,6 +793,19 @@ bool DeclSpec::setFunctionSpecGrTask(SourceLocation Loc, const char *&PrevSpec,
   }
   FS___gr_task_specified = true;
   FS___gr_taskLoc = Loc;
+  return false;
+}
+bool DeclSpec::setFunctionSpecGrPEA(SourceLocation Loc, const char *&PrevSpec,
+                                     unsigned &DiagID) {
+  // 'inline inline' is ok.  However, since this is likely not what the user
+  // intended, we will always warn, similar to duplicates of type qualifiers.
+  if (FS___gr_pea_specified) {
+    DiagID = diag::warn_duplicate_declspec;
+    PrevSpec = "__gr_pea";
+    return true;
+  }
+  FS___gr_pea_specified = true;
+  FS___gr_peaLoc = Loc;
   return false;
 }
 

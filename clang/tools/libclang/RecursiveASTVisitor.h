@@ -2272,6 +2272,7 @@ DEF_TRAVERSE_STMT(CXXOperatorCallExpr, { })
 DEF_TRAVERSE_STMT(OpaqueValueExpr, { })
 DEF_TRAVERSE_STMT(CUDAKernelCallExpr, { })
 DEF_TRAVERSE_STMT(GrcTaskCallExpr, { })
+DEF_TRAVERSE_STMT(GrcARMCallExpr, { })
 
 // These operators (all of them) do not need any action except
 // iterating over the children.

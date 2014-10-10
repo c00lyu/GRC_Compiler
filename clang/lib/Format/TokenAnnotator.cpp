@@ -358,7 +358,6 @@ private:
       }
       break;
     case tok::kw_for:
-    case tok::kw___gr_for:
       Contexts.back().ColonIsForRangeExpr = true;
       next();
       if (!parseParens())
@@ -421,8 +420,7 @@ private:
       parseTemplateDeclaration();
       break;
     case tok::identifier:
-      //GR if (Line.First->is(tok::kw_for) &&
-      if (Line.First->isOneOf(tok::kw_for, tok::kw___gr_for) &&
+      if (Line.First->is(tok::kw_for) &&
           Tok->Tok.getIdentifierInfo() == &Ident_in)
         Tok->Type = TT_ObjCForIn;
       break;
@@ -609,7 +607,7 @@ private:
                (Current.is(tok::l_paren) && !Line.MustBeDeclaration &&
                 !Line.InPPDirective &&
                 (!Current.Previous ||
-                 !Current.Previous->isOneOf(tok::kw_for, tok::kw___gr_for, tok::kw_catch)))) {
+                 !Current.Previous->isOneOf(tok::kw_for, tok::kw_catch)))) {
       Contexts.back().IsExpression = true;
     } else if (Current.isOneOf(tok::r_paren, tok::greater, tok::comma)) {
       for (FormatToken *Previous = Current.Previous;
@@ -1138,7 +1136,7 @@ unsigned TokenAnnotator::splitPenalty(const AnnotatedLine &Line,
     return 150;
 
   if (Right.Type == TT_StartOfName || Right.is(tok::kw_operator)) {
-    if (Line.First->isOneOf(tok::kw_for, tok::kw___gr_for) && Right.PartOfMultiVariableDeclStmt)
+    if (Line.First->is(tok::kw_for) && Right.PartOfMultiVariableDeclStmt)
       return 3;
     if (Left.Type == TT_StartOfName)
       return 20;
@@ -1174,7 +1172,7 @@ unsigned TokenAnnotator::splitPenalty(const AnnotatedLine &Line,
     return 100;
 
   // In for-loops, prefer breaking at ',' and ';'.
-  if (Line.First->isOneOf(tok::kw_for, tok::kw___gr_for) && Left.is(tok::equal))
+  if (Line.First->is(tok::kw_for) && Left.is(tok::equal))
     return 4;
 
   // In Objective-C method expressions, prefer breaking before "param:" over
@@ -1295,7 +1293,7 @@ bool TokenAnnotator::spaceRequiredBetween(const AnnotatedLine &Line,
            Left.isOneOf(tok::kw_return, tok::kw_new, tok::kw_delete,
                         tok::semi) ||
            (Style.SpaceAfterControlStatementKeyword &&
-            Left.isOneOf(tok::kw_if, tok::kw_for, tok::kw___gr_for, tok::kw_while, tok::kw_switch,
+            Left.isOneOf(tok::kw_if, tok::kw_for, tok::kw_while, tok::kw_switch,
                          tok::kw_catch));
   }
   if (Left.is(tok::at) && Right.Tok.getObjCKeywordID() != tok::objc_not_keyword)

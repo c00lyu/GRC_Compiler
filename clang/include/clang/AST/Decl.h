@@ -1455,7 +1455,9 @@ private:
   bool IsInline : 1;
   bool IsInlineSpecified : 1;
   bool IsGrTask : 1;
+  bool IsGrPEA : 1;
   bool IsGrTaskSpecified : 1;
+  bool IsGrPEASpecified : 1;
   bool IsVirtualAsWritten : 1;
   bool IsPure : 1;
   bool HasInheritedPrototype : 1;
@@ -1544,7 +1546,7 @@ protected:
                const DeclarationNameInfo &NameInfo,
                QualType T, TypeSourceInfo *TInfo,
                StorageClass S, bool isInlineSpecified,
-               bool isConstexprSpecified,bool isGrTaskSpecified=false)
+               bool isConstexprSpecified,bool isGrTaskSpecified=false,bool isGrPEASpecified=false)
     : DeclaratorDecl(DK, DC, NameInfo.getLoc(), NameInfo.getName(), T, TInfo,
                      StartLoc),
       DeclContext(DK),
@@ -1552,6 +1554,7 @@ protected:
       SClass(S),
       IsInline(isInlineSpecified), IsInlineSpecified(isInlineSpecified),
       IsGrTask(isGrTaskSpecified),IsGrTaskSpecified(isGrTaskSpecified),
+      IsGrPEA(isGrPEASpecified),IsGrPEASpecified(isGrPEASpecified),
       IsVirtualAsWritten(false), IsPure(false), HasInheritedPrototype(false),
       HasWrittenPrototype(true), IsDeleted(false), IsTrivial(false),
       IsDefaulted(false), IsExplicitlyDefaulted(false),
@@ -1587,13 +1590,15 @@ public:
                               bool isInlineSpecified = false,
                               bool hasWrittenPrototype = true,
                               bool isConstexprSpecified = false,
-                              bool isGrTaskSpecified = false) {
+                              bool isGrTaskSpecified = false,
+                              bool isGrPEASpecified = false) {
     DeclarationNameInfo NameInfo(N, NLoc);
     return FunctionDecl::Create(C, DC, StartLoc, NameInfo, T, TInfo,
                                 SC,
                                 isInlineSpecified, hasWrittenPrototype,
                                 isConstexprSpecified,
-                                isGrTaskSpecified);
+                                isGrTaskSpecified,
+                                isGrPEASpecified);
   }
 
   static FunctionDecl *Create(ASTContext &C, DeclContext *DC,
@@ -1604,7 +1609,8 @@ public:
                               bool isInlineSpecified,
                               bool hasWrittenPrototype,
                               bool isConstexprSpecified = false,
-                              bool isGrTaskSpecified=false);
+                              bool isGrTaskSpecified=false,
+                              bool isGrPEASpecified=false);
 
   static FunctionDecl *CreateDeserialized(ASTContext &C, unsigned ID);
                        
@@ -1906,6 +1912,12 @@ public:
   void setGrTaskSpecified(bool I) {
       IsGrTaskSpecified = I;
       IsGrTask = I;
+    }
+   /// GrPEA
+  bool isGrPEASpecified() const { return IsGrPEASpecified; }
+  void setGrPEASpecified(bool I) {
+      IsGrPEASpecified = I;
+      IsGrPEA = I;
     }
   /// Flag that this function is implicitly inline.
   void setImplicitlyInline() {

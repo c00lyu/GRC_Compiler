@@ -2938,6 +2938,9 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
     case tok::kw___gr_task:
       isInvalid = DS.setFunctionSpecGrTask(Loc, PrevSpec, DiagID);
       break;
+    case tok::kw___gr_pea:
+      isInvalid = DS.setFunctionSpecGrPEA(Loc, PrevSpec, DiagID);
+      break;
 
     case tok::kw_virtual:
       isInvalid = DS.setFunctionSpecVirtual(Loc, PrevSpec, DiagID);

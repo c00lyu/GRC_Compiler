@@ -389,7 +389,6 @@ void CoreEngine::HandleBlockExit(const CFGBlock * B, ExplodedNode *Pred) {
         HandleBranch(cast<CXXForRangeStmt>(Term)->getCond(), Term, B, Pred);
         return;
 
-      case Stmt::GRForStmtClass:
       case Stmt::ForStmtClass:
         HandleBranch(cast<ForStmt>(Term)->getCond(), Term, B, Pred);
         return;

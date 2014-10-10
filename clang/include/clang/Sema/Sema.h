@@ -2914,8 +2914,7 @@ public:
                           Decl *SecondVar,
                           FullExprArg Third,
                           SourceLocation RParenLoc,
-                          Stmt *Body,
-						  Stmt::StmtClass SC);
+                          Stmt *Body);
   ExprResult CheckObjCForCollectionOperand(SourceLocation forLoc,
                                            Expr *collection);
   StmtResult ActOnObjCForCollectionStmt(SourceLocation ForColLoc,

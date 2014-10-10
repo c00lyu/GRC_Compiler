@@ -234,7 +234,7 @@ void ContinuationIndenter::addTokenOnCurrentLine(LineState &State, bool DryRun,
   FormatToken &Current = *State.NextToken;
   const FormatToken &Previous = *State.NextToken->Previous;
   if (Current.is(tok::equal) &&
-      (State.Line->First->isOneOf(tok::kw_for, tok::kw___gr_for) || State.ParenLevel == 0) &&
+      (State.Line->First->is(tok::kw_for) || State.ParenLevel == 0) &&
       State.Stack.back().VariablePos == 0) {
     State.Stack.back().VariablePos = State.Column;
     // Move over * and & if they are bound to the variable name.
@@ -273,7 +273,7 @@ void ContinuationIndenter::addTokenOnCurrentLine(LineState &State, bool DryRun,
     State.Stack.back().ContainsUnwrappedBuilder = true;
 
   State.Column += Spaces;
-  if (Current.is(tok::l_paren) && Previous.isOneOf(tok::kw_if, tok::kw_for, tok::kw___gr_for))
+  if (Current.is(tok::l_paren) && Previous.isOneOf(tok::kw_if, tok::kw_for))
     // Treat the condition inside an if as if it was a second function
     // parameter, i.e. let nested calls have a continuation indent.
     State.Stack.back().LastSpace = State.Column + 1; // 1 is length of "(".

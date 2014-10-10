@@ -1092,8 +1092,8 @@ Decl *Parser::ParseFunctionDefinition(ParsingDeclarator &D,
   }
 
   unsigned  Flags;
-  if(getLangOpts().GRC && D.getDeclSpec().isGrTaskSpecified())
-	  Flags = Scope::GrcTaskFnScope|Scope::FnScope|Scope::DeclScope;
+  if(getLangOpts().GRC && ( (D.getDeclSpec().isGrTaskSpecified()) || (D.getDeclSpec().isGrPEASpecified()) ) )
+	  Flags = Scope::GrcTaskFnScope|Scope::GrcPEAFnScope|Scope::FnScope|Scope::DeclScope;
   else
 	  Flags = Scope::FnScope|Scope::DeclScope;
 	  // Enter a scope for the function body.

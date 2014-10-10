@@ -479,6 +479,7 @@ CXCursor cxcursor::MakeCXCursor(const Stmt *S, const Decl *Parent,
   case Stmt::CXXMemberCallExprClass:
   case Stmt::CUDAKernelCallExprClass:
   case Stmt::GrcTaskCallExprClass:
+  case Stmt::GrcARMCallExprClass:
   case Stmt::CXXConstructExprClass:  
   case Stmt::CXXTemporaryObjectExprClass:
   case Stmt::CXXUnresolvedConstructExprClass:

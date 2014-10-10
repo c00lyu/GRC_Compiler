@@ -525,7 +525,6 @@ bool RecursiveASTVisitor<Derived>::dataTraverseNode(Stmt *S,
   // Top switch stmt: dispatch to TraverseFooStmt for each concrete FooStmt.
   switch (S->getStmtClass()) {
   case Stmt::NoStmtClass: break;
-  case Stmt::GRForStmtClass: DISPATCH_WALK(ForStmt, ForStmt, S);
 #define ABSTRACT_STMT(STMT)
 #define STMT(CLASS, PARENT) \
   case Stmt::CLASS##Class: DISPATCH_WALK(CLASS, CLASS, S);
@@ -582,7 +581,6 @@ bool RecursiveASTVisitor<Derived>::TraverseStmt(Stmt *S) {
   // Top switch stmt: dispatch to TraverseFooStmt for each concrete FooStmt.
   switch (S->getStmtClass()) {
   case Stmt::NoStmtClass: break;
-  case Stmt::GRForStmtClass: DISPATCH(ForStmt, ForStmt, S);
 #define ABSTRACT_STMT(STMT)
 #define STMT(CLASS, PARENT) \
   case Stmt::CLASS##Class: DISPATCH(CLASS, CLASS, S);

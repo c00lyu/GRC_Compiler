@@ -9094,7 +9094,7 @@ buildSingleCopyAssignRecursively(Sema &S, SourceLocation Loc, QualType T,
   return S.ActOnForStmt(Loc, Loc, InitStmt, 
                         S.MakeFullExpr(Comparison),
                         0, S.MakeFullDiscardedValueExpr(Increment),
-                        Loc, Copy.take(), Stmt::ForStmtClass);
+                        Loc, Copy.take());
 }
 
 static StmtResult

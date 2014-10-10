@@ -208,7 +208,7 @@ ExprResult Parser::ParseConstantExpression(TypeCastState isTypeCast) {
 bool Parser::isNotExpressionStart() {
   tok::TokenKind K = Tok.getKind();
   if (K == tok::l_brace || K == tok::r_brace  ||
-      K == tok::kw_for  || K == tok::kw___gr_for  || K == tok::kw_while ||
+      K == tok::kw_for  || K == tok::kw_while ||
       K == tok::kw_if   || K == tok::kw_else  ||
       K == tok::kw_goto || K == tok::kw_try)
     return true;

@@ -470,10 +470,10 @@ KEYWORD(event_t                     , KEYOPENCL)
 
 // GRC Extensions
 KEYWORD(__gr_task                    , KEYGRC)
+KEYWORD(__gr_pea                    , KEYGRC)
 KEYWORD(__gr_syn                     , KEYGRC)
 KEYWORD(__gr_asyn                    , KEYGRC)
 KEYWORD(__gr_parallel                , KEYGRC)
-KEYWORD(__gr_for                     , KEYGRC)
 
 // Borland Extensions.
 KEYWORD(__pascal                    , KEYALL)

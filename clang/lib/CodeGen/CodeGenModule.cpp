@@ -1460,6 +1460,12 @@ CodeGenModule::GetOrCreateLLVMFunction(StringRef MangledName,
 			  FnName.startswith("__gr_task_"))
 		  CodeGenFunction(*this).addGrcTaskMetadata(F);
   }
+  if(getLangOpts().GRC && D){
+	  const FunctionDecl *fd = cast<FunctionDecl>(D);
+	  StringRef FnName(F->getName());
+	  if(fd->isGrPEASpecified())
+		  CodeGenFunction(*this).addGrcPEAMetadata(F);
+  }
 
   // add NamedMeatadata for the library function called in task funciton
   if(getLangOpts().GRC){

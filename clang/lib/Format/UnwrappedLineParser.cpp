@@ -340,7 +340,6 @@ void UnwrappedLineParser::calculateBraceTypes() {
     case tok::kw_if:
     case tok::kw_while:
     case tok::kw_for:
-    case tok::kw___gr_for:
     case tok::kw_switch:
     case tok::kw_try:
       if (!LBraceStack.empty())
@@ -605,7 +604,6 @@ void UnwrappedLineParser::parseStructuralElement() {
     parseIfThenElse();
     return;
   case tok::kw_for:
-  case tok::kw___gr_for:
   case tok::kw_while:
     parseForOrWhileLoop();
     return;
@@ -996,7 +994,7 @@ void UnwrappedLineParser::parseNamespace() {
 }
 
 void UnwrappedLineParser::parseForOrWhileLoop() {
-  assert((FormatTok->Tok.is(tok::kw_for) || FormatTok->Tok.is(tok::kw___gr_for) || FormatTok->Tok.is(tok::kw_while)) &&
+  assert((FormatTok->Tok.is(tok::kw_for) || FormatTok->Tok.is(tok::kw_while)) &&
          "'for' or 'while' expected");
   nextToken();
   if (FormatTok->Tok.is(tok::l_paren))

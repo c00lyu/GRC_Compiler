@@ -97,7 +97,8 @@ public:
     OpenMPDirectiveScope = 0x8000,
 
     /// \brief This is the scope of Grc Task function scope
-    GrcTaskFnScope = 0x10000
+    GrcTaskFnScope = 0x10000,
+    GrcPEAFnScope = 0x20000
   };
 private:
   /// The parent scope for this scope.  This is null for the translation-unit

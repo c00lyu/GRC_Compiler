@@ -179,7 +179,6 @@ bool ParentMap::isConsumedExpr(Expr* E) const {
       // If it isn't a comma, both sides are consumed.
       return BE->getOpcode()!=BO_Comma ||DirectChild==BE->getRHS();
     }
-	case Stmt::GRForStmtClass:
     case Stmt::ForStmtClass:
       return DirectChild == cast<ForStmt>(P)->getCond();
     case Stmt::WhileStmtClass:

@@ -3544,12 +3544,14 @@ FunctionDecl *FunctionDecl::Create(ASTContext &C, DeclContext *DC,
                                    bool isInlineSpecified, 
                                    bool hasWrittenPrototype,
                                    bool isConstexprSpecified,
-                                   bool isGrTaskSpecified) {
+                                   bool isGrTaskSpecified,
+                                   bool isGrPEASpecified) {
   FunctionDecl *New = new (C) FunctionDecl(Function, DC, StartLoc, NameInfo,
                                            T, TInfo, SC,
                                            isInlineSpecified,
                                            isConstexprSpecified,
-                                           isGrTaskSpecified);
+                                           isGrTaskSpecified,
+                                           isGrPEASpecified);
   New->HasWrittenPrototype = hasWrittenPrototype;
   return New;
 }
